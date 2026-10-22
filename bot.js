@@ -21,16 +21,27 @@ http.createServer((req, res) => {
     console.log(`🌐 Server lang nghe thanh cong tai http://${HOST}:${PORT}`);
 });
 
+// Danh sách dự phòng phong phú nếu mạng lỗi
 const FALLBACK_JOBS = [
     {
         title: "Chuyên Viên Vận Hành Sàn TMĐT (TikTok Shop/Shopee)",
         location: "Cầu Giấy - Hà Nội",
         salary: "12–18M + thưởng"
+    },
+    {
+        title: "Leader Vận Hành Sàn Thương Mại Điện Tử",
+        location: "Đống Đa - Hà Nội",
+        salary: "15–22M"
+    },
+    {
+        title: "Nhân Viên Quản Lý Đơn Hàng & Vận Hành Sàn",
+        location: "Thanh Xuân - Hà Nội",
+        salary: "10–15M"
     }
 ];
 
 async function scrapeJobsFromTopCV() {
-    console.log(`[${new Date().toLocaleString()}] 🔍 Đang cào dữ liệu từ TopCV...`);
+    console.log(`[${new Date().toLocaleString()}] 🔍 Đang cào toàn bộ danh sách job từ TopCV...`);
     let browser;
     try {
         const executablePath = await chromium.executablePath();
@@ -55,10 +66,11 @@ async function scrapeJobsFromTopCV() {
         const $ = cheerio.load(content);
         const jobs = [];
 
-        $('.job-item-search-result, .job-item').each((i, el) => {
+        // Duyệt qua tất cả các tin tuyển dụng hiển thị trên trang
+        $('.job-item-search-result, .job-item, .box-job-item').each((i, el) => {
             const title = $(el).find('.title a span, .title a').first().text().trim();
             const salary = $(el).find('.title-salary, .salary').first().text().trim() || '12–18M + thưởng';
-            const location = $(el).find('.address, .job-address').first().text().trim() || 'Cầu Giấy - Hà Nội';
+            const location = $(el).find('.address, .job-address').first().text().trim() || 'Hà Nội';
 
             if (title && !jobs.some(j => j.title === title)) {
                 jobs.push({ title, salary, location });
@@ -66,20 +78,20 @@ async function scrapeJobsFromTopCV() {
         });
 
         if (jobs.length > 0) {
-            console.log(`[${new Date().toLocaleString()}] ✅ Cào thành công ${jobs.length} việc từ TopCV.`);
+            console.log(`[${new Date().toLocaleString()}] ✅ Cào thành công ${jobs.length} việc làm khác nhau từ TopCV.`);
             return jobs;
         }
     } catch (error) {
         if (browser) await browser.close();
-        console.error(`[${new Date().toLocaleString()}] ⚠️ Lỗi cào TopCV, chuyển sang bài mẫu:`, error.message);
+        console.error(`[${new Date().toLocaleString()}] ⚠️ Lỗi cào TopCV, chuyển sang danh sách dự phòng:`, error.message);
     }
 
     return FALLBACK_JOBS;
 }
 
 function buildPostContent(job) {
-    let locHeadline = job.location.includes('Hà Nội') ? job.location : `${job.location}- Hà Nội`;
-    if (locHeadline.length > 30) locHeadline = "Cầu Giấy - Hà Nội";
+    let locHeadline = job.location.includes('Hà Nội') ? job.location : `${job.location} - Hà Nội`;
+    if (locHeadline.length > 35) locHeadline = "Cầu Giấy - Hà Nội";
 
     return `[${locHeadline}] Cần tuyển ${job.title}
 Thời gian làm việc: Thứ 2 - Thứ 7 (8h30 - 17h, nghỉ trưa 1h30p)
@@ -110,11 +122,14 @@ Phụ cấp ăn trưa 25k/ngày.
 async function scrapeAndPostToFacebook() {
     try {
         const jobs = await scrapeJobsFromTopCV();
+        
+        // Chọn ngẫu nhiên một job khác nhau trong danh sách cào được
         const selectedJob = jobs[Math.floor(Math.random() * jobs.length)];
+        console.log(`[${new Date().toLocaleString()}] 🎲 Đã chọn ngẫu nhiên job: "${selectedJob.title}" (${selectedJob.location})`);
         
         const finalContent = buildPostContent(selectedJob);
 
-        console.log(`[${new Date().toLocaleString()}] 🚀 Đang gửi bài tuyển dụng dạng Text lên Group Facebook...`);
+        console.log(`[${new Date().toLocaleString()}] 🚀 Đang gửi bài tuyển dụng lên Group Facebook...`);
 
         const postRes = await axios.post(FUNC_POST_ENDPOINT, {
             text: finalContent,
