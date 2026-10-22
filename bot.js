@@ -5,7 +5,7 @@ const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 const http = require('http');
 
-const TOPCV_URL = 'https://www.topcv.vn/tim-viec-lam-van-hanh-san-thuong-mai-dien-tu-tai-ha-noi-kl1?type_keyword=1&sba=1&locations=l1&saturday_status=0';
+const TOPCV_URL = 'https://www.topcv.vn/tim-viec-lam-van-hanh-san-thu-mai-dien-tu-tai-ha-noi-kl1?type_keyword=1&sba=1&locations=l1&saturday_status=0';
 const GROUP_DICH_ID = '1389449883381299'; 
 const FUNC_POST_ENDPOINT = 'https://public-api.func.vn/functions/6ad81998225b55a1275be6ec';
 const DIRECT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDgxOTk4MjI1YjU1YTEyNzViZTZlYyIsInR5cGUiOiJGVU5DVElPTiIsInBsYXRmb3JtIjoiRkFDRUJPT0tfVVNFUiIsImlhdCI6MTc5MjU0Nzc2OCwiZXhwIjoxODI0MDgzNzY4fQ.s3tD880fxMIWSflOMXtStSVziikS-4m7ZLZt7zPyTuQ';
@@ -26,7 +26,7 @@ const FALLBACK_JOBS = [
         title: "Chuyên Viên Vận Hành Sàn TMĐT (TikTok Shop/Shopee)",
         location: "Cầu Giấy - Hà Nội",
         salary: "12–18M + thưởng",
-        phone: "0944 197 559"
+        contact: "Liên hệ trực tiếp qua TopCV hoặc Email nhà tuyển dụng"
     }
 ];
 
@@ -61,14 +61,14 @@ async function scrapeJobsFromTopCV() {
             const salary = $(el).find('.title-salary, .salary').first().text().trim() || '12–18M + thưởng';
             const location = $(el).find('.address, .job-address').first().text().trim() || 'Cầu Giấy - Hà Nội';
             
-            // Cố gắng quét thông tin liên hệ / số điện thoại nếu hiển thị ngay trên card tìm kiếm, nếu không có dùng mặc định
-            let phone = $(el).find('.phone, .contact').text().trim();
-            if (!phone || phone.length < 9) {
-                phone = '0944 197 559';
+            // Cố gắng lấy thông tin liên hệ / tên công ty / hoặc ghi chú từ thẻ card web
+            let contact = $(el).find('.company-name, .box-footer, .text-muted').text().trim();
+            if (!contact || contact.length < 5) {
+                contact = 'Ứng tuyển trực tiếp trên hệ thống TopCV';
             }
 
             if (title && !jobs.some(j => j.title === title)) {
-                jobs.push({ title, salary, location, phone });
+                jobs.push({ title, salary, location, contact });
             }
         });
 
@@ -111,7 +111,7 @@ Phụ cấp ăn trưa 25k/ngày.
 Đóng BHXH, BHYT theo quy định.
 Được cung cấp đầy đủ trang thiết bị làm việc.
 
-=> Ứng viên quan tâm liên hệ: ${job.phone}`;
+=> Thông tin liên hệ / Ứng tuyển gốc: ${job.contact}`;
 }
 
 async function scrapeAndPostToFacebook() {
