@@ -9,9 +9,12 @@ const TOPCV_URL = 'https://www.topcv.vn/tim-viec-lam-van-hanh-san-thuong-mai-die
 const GROUP_DICH_ID = '1389449883381299'; 
 const FUNC_POST_ENDPOINT = 'https://public-api.func.vn/functions/6ad81998225b55a1275be6ec';
 
+// Đưa thẳng Token chuẩn vào đây để không bao giờ bị lỗi thiếu Token nữa
+const DIRECT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDgxOTk4MjI1YjU1YTEyNzViZTZlYyIsInR5cGUiOiJGVU5DVElPTiIsInBsYXRmb3JtIjoiRkFDRUJPT0tfVVNFUiIsImlhdCI6MTc5MjU0Nzc2OCwiZXhwIjoxODI0MDgzNzY4fQ.s3tD880fxMIWSflOMXtStSVziikS-4m7ZLZt7zPyTuQ';
+
 const CONTACT_PHONES = ['0325 574 174', '0961 887 592', '0944 197 559'];
 
-// Tạo Web Server bind chính xác vào 0.0.0.0
+// Tạo Web Server bind port cho Render
 const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0';
 
@@ -128,12 +131,6 @@ async function scrapeAndPostToFacebook() {
 
         console.log(`[${new Date().toLocaleString()}] 🚀 Đang gửi bài tuyển dụng dạng Text lên Group Facebook...`);
 
-        let rawToken = process.env.TOKEN_CREATE_POST || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDgxOTk4MjI1YjU1YTEyNzViZTZlYyIsInR5cGUiOiJGVU5DVElPTiIsInBsYXRmb3JtIjoiRkFDRUJPT0tfVVNFUiIsImlhdCI6MTc5MjU0Nzc2OCwiZXhwIjoxODI0MDgzNzY4fQ.s3tD880fxMIWSflOMXtStSVziikS-4m7ZLZt7zPyTuQ';
-        let cleanToken = rawToken.trim();
-        if (cleanToken.startsWith('Bearer ')) {
-            cleanToken = cleanToken.replace(/^Bearer\s+/i, '');
-        }
-
         const postRes = await axios.post(FUNC_POST_ENDPOINT, {
             text: finalContent,
             image_urls: [],
@@ -141,7 +138,7 @@ async function scrapeAndPostToFacebook() {
             text_format_preset_id: ""
         }, {
             headers: { 
-                'Authorization': `Bearer ${cleanToken}`,
+                'Authorization': `Bearer ${DIRECT_TOKEN}`,
                 'Content-Type': 'application/json' 
             }
         });
