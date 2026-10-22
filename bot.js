@@ -104,7 +104,7 @@ Phụ cấp ăn trưa 25k/ngày.
 Đóng BHXH, BHYT theo quy định.
 Được cung cấp đầy đủ trang thiết bị làm việc.
 
-=> Inbox để nhận JD chi tiết`;
+=> Comment, chấm bài để nhận JD`;
 }
 
 async function scrapeAndPostToFacebook() {
