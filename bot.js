@@ -128,3 +128,35 @@ async function scrapeAndPostToFacebook() {
         const jobs = await scrapeJobsFromTopCV();
         const selectedJob = jobs[Math.floor(Math.random() * jobs.length)];
         
+        const finalContent = buildPostContent(selectedJob);
+
+        console.log(`[${new Date().toLocaleString()}] 🚀 Đang gửi bài tuyển dụng dạng Text lên Group Facebook...`);
+
+        const token = TOKEN_CREATE_POST.trim();
+        const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+
+        const postRes = await axios.post(FUNC_POST_ENDPOINT, {
+            text: finalContent,
+            image_urls: [],
+            group_id: GROUP_DICH_ID,
+            text_format_preset_id: ""
+        }, {
+            headers: { 
+                'Authorization': authHeader,
+                'Content-Type': 'application/json' 
+            }
+        });
+
+        console.log(`[${new Date().toLocaleString()}] 🎉 ĐĂNG BÀI THÀNH CÔNG!`, postRes.data);
+
+    } catch (error) {
+        console.error(`[${new Date().toLocaleString()}] ❌ Lỗi khi đăng bài:`, error.response ? error.response.data : error.message);
+    }
+}
+
+// ⏰ Đặt lịch 10 lần/ngày
+cron.schedule('0 8,11,14,17,20 * * *', () => scrapeAndPostToFacebook());
+cron.schedule('30 9,12,15,18,21 * * *', () => scrapeAndPostToFacebook());
+
+console.log('🤖 Bot tuyển dụng TopCV (Format Text Chuẩn) đã sẵn sàng!');
+scrapeAndPostToFacebook();
