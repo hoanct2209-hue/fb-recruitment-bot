@@ -8,11 +8,7 @@ const http = require('http');
 const TOPCV_URL = 'https://www.topcv.vn/tim-viec-lam-van-hanh-san-thuong-mai-dien-tu-tai-ha-noi-kl1?type_keyword=1&sba=1&locations=l1&saturday_status=0';
 const GROUP_DICH_ID = '1389449883381299'; 
 const FUNC_POST_ENDPOINT = 'https://public-api.func.vn/functions/6ad81998225b55a1275be6ec';
-
-// Đưa thẳng Token chuẩn vào đây để không bao giờ bị lỗi thiếu Token nữa
 const DIRECT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDgxOTk4MjI1YjU1YTEyNzViZTZlYyIsInR5cGUiOiJGVU5DVElPTiIsInBsYXRmb3JtIjoiRkFDRUJPT0tfVVNFUiIsImlhdCI6MTc5MjU0Nzc2OCwiZXhwIjoxODI0MDgzNzY4fQ.s3tD880fxMIWSflOMXtStSVziikS-4m7ZLZt7zPyTuQ';
-
-const CONTACT_PHONES = ['0325 574 174', '0961 887 592', '0944 197 559'];
 
 // Tạo Web Server bind port cho Render
 const PORT = process.env.PORT || 10000;
@@ -27,20 +23,12 @@ http.createServer((req, res) => {
 
 const FALLBACK_JOBS = [
     {
-        title: "Leader vận hành sàn TikTok, Shopee",
-        location: "Mỹ Đình- Hà Nội",
-        salary: "15–20M + thưởng"
-    },
-    {
         title: "Chuyên Viên Vận Hành Sàn TMĐT (TikTok Shop/Shopee)",
         location: "Cầu Giấy - Hà Nội",
-        salary: "12–18M + thưởng"
+        salary: "12–18M + thưởng",
+        phone: "0944 197 559"
     }
 ];
-
-function getRandomPhone() {
-    return CONTACT_PHONES[Math.floor(Math.random() * CONTACT_PHONES.length)];
-}
 
 async function scrapeJobsFromTopCV() {
     console.log(`[${new Date().toLocaleString()}] 🔍 Đang cào dữ liệu từ TopCV...`);
@@ -70,11 +58,17 @@ async function scrapeJobsFromTopCV() {
 
         $('.job-item-search-result, .job-item').each((i, el) => {
             const title = $(el).find('.title a span, .title a').first().text().trim();
-            const salary = $(el).find('.title-salary, .salary').first().text().trim() || '15–20M + thưởng';
-            const location = $(el).find('.address, .job-address').first().text().trim() || 'Mỹ Đình- Hà Nội';
+            const salary = $(el).find('.title-salary, .salary').first().text().trim() || '12–18M + thưởng';
+            const location = $(el).find('.address, .job-address').first().text().trim() || 'Cầu Giấy - Hà Nội';
+            
+            // Cố gắng quét thông tin liên hệ / số điện thoại nếu hiển thị ngay trên card tìm kiếm, nếu không có dùng mặc định
+            let phone = $(el).find('.phone, .contact').text().trim();
+            if (!phone || phone.length < 9) {
+                phone = '0944 197 559';
+            }
 
             if (title && !jobs.some(j => j.title === title)) {
-                jobs.push({ title, salary, location });
+                jobs.push({ title, salary, location, phone });
             }
         });
 
@@ -91,10 +85,8 @@ async function scrapeJobsFromTopCV() {
 }
 
 function buildPostContent(job) {
-    const phone = getRandomPhone();
-    
     let locHeadline = job.location.includes('Hà Nội') ? job.location : `${job.location}- Hà Nội`;
-    if (locHeadline.length > 25) locHeadline = "Mỹ Đình- Hà Nội";
+    if (locHeadline.length > 30) locHeadline = "Cầu Giấy - Hà Nội";
 
     return `[${locHeadline}] Cần tuyển ${job.title}
 Thời gian làm việc: Thứ 2 - Thứ 7 (8h30 - 17h, nghỉ trưa 1h30p)
@@ -119,7 +111,7 @@ Phụ cấp ăn trưa 25k/ngày.
 Đóng BHXH, BHYT theo quy định.
 Được cung cấp đầy đủ trang thiết bị làm việc.
 
-=> Ứng viên quan tâm liên hệ: ${phone}`;
+=> Ứng viên quan tâm liên hệ: ${job.phone}`;
 }
 
 async function scrapeAndPostToFacebook() {
