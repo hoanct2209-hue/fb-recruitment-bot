@@ -3,14 +3,28 @@ const cron = require('node-cron');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
+const http = require('http');
 
 // ==================== CẤU HÌNH THÔNG TIN ====================
 const TOPCV_URL = 'https://www.topcv.vn/tim-viec-lam-van-hanh-san-thuong-mai-dien-tu-tai-ha-noi-kl1?type_keyword=1&sba=1&locations=l1&saturday_status=0';
 const GROUP_DICH_ID = '1389449883381299'; 
 const FUNC_POST_ENDPOINT = 'https://public-api.func.vn/functions/6ad81998225b55a1275be6ec';
-const TOKEN_CREATE_POST = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDgxOTk4MjI1YjU1YTEyNzViZTZlYyIsInR5cGUiOiJGVUNSVE1PTiIsInBsYXRmb3JtIjoiRkFDRUJPT0tfVVNFUiIsImlhdCI6MTc5MjU0Nzc2OCwiZXhwIjoxODI0MDgzNzY4fQ.s3tD880fxMIWSflOMXtStSVziikS-4m7ZLZt7zPyTuQ';
+
+// Ưu tiên lấy Token từ Environment Variable của Render
+const TOKEN_CREATE_POST = process.env.TOKEN_CREATE_POST || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZDgxOTk4MjI1YjU1YTEyNzViZTZlYyIsInR5cGUiOiJGVU5DVElPTiIsInBsYXRmb3JtIjoiRkFDRUJPT0tfVVNFUiIsImlhdCI6MTc5MjU0Nzc2OCwiZXhwIjoxODI0MDgzNzY4fQ.s3tD880fxMIWSflOMXtStSVziikS-4m7ZLZt7zPyTuQ';
 
 const CONTACT_PHONES = ['0325 574 174', '0961 887 592', '0944 197 559'];
+
+// 🌐 Tạo Web Server bind chính xác vào 0.0.0.0 để sửa triệt để lỗi Port Binding trên Render
+const PORT = process.env.PORT || 10000;
+const HOST = '0.0.0.0';
+
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot tuyen dung FB dang hoat dong tu dong 24/7!\n');
+}).listen(PORT, HOST, () => {
+    console.log(`🌐 Server lang nghe thanh cong tai http://${HOST}:${PORT}`);
+});
 
 const FALLBACK_JOBS = [
     {
@@ -34,7 +48,7 @@ async function scrapeJobsFromTopCV() {
     let browser;
     try {
         const executablePath = await chromium.executablePath();
-
+        
         browser = await puppeteer.launch({
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
@@ -45,7 +59,7 @@ async function scrapeJobsFromTopCV() {
 
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
+        
         await page.goto(TOPCV_URL, { waitUntil: 'domcontentloaded', timeout: 45000 });
         await new Promise(resolve => setTimeout(resolve, 4000));
 
@@ -79,7 +93,7 @@ async function scrapeJobsFromTopCV() {
 
 function buildPostContent(job) {
     const phone = getRandomPhone();
-
+    
     let locHeadline = job.location.includes('Hà Nội') ? job.location : `${job.location}- Hà Nội`;
     if (locHeadline.length > 25) locHeadline = "Mỹ Đình- Hà Nội";
 
@@ -113,32 +127,4 @@ async function scrapeAndPostToFacebook() {
     try {
         const jobs = await scrapeJobsFromTopCV();
         const selectedJob = jobs[Math.floor(Math.random() * jobs.length)];
-
-        const finalContent = buildPostContent(selectedJob);
-
-        console.log(`[${new Date().toLocaleString()}] 🚀 Đang gửi bài tuyển dụng dạng Text lên Group Facebook...`);
-
-        const postRes = await axios.post(FUNC_POST_ENDPOINT, {
-            text: finalContent,
-            image_urls: [],
-            group_id: GROUP_DICH_ID,
-            text_format_preset_id: ""
-        }, {
-            headers: { 
-                'Authorization': 'Bearer ' + TOKEN_CREATE_POST,
-                'Content-Type': 'application/json' 
-            }
-        });
-
-        console.log(`[${new Date().toLocaleString()}] 🎉 ĐĂNG BÀI THÀNH CÔNG!`, postRes.data);
-
-    } catch (error) {
-        console.error(`[${new Date().toLocaleString()}] ❌ Lỗi khi đăng bài:`, error.response ? error.response.data : error.message);
-    }
-}
-
-cron.schedule('0 8,11,14,17,20 * * *', () => scrapeAndPostToFacebook());
-cron.schedule('30 9,12,15,18,21 * * *', () => scrapeAndPostToFacebook());
-
-console.log('🤖 Bot tuyển dụng TopCV (Format Text Chuẩn) đã sẵn sàng!');
-scrapeAndPostToFacebook();
+        
